@@ -5,7 +5,9 @@ from io import BytesIO
 import base64
 from PIL import Image
 from ultralytics import YOLO
+import uuid  # เพิ่มการใช้งาน uuid
 import numpy as np
+
 
 app = FastAPI()
 
@@ -43,6 +45,18 @@ instructions = {
 # สร้างตัวจัดการเทมเพลต
 templates = Jinja2Templates(directory="templates")
 
+# Middleware สำหรับเพิ่ม Request ID
+@app.middleware("http")
+async def add_request_id(request: Request, call_next):
+    # สร้าง Request ID ใหม่หรือใช้ค่าใน Header
+    request_id = request.headers.get('X-Request-ID', str(uuid.uuid4()))
+    
+    # บันทึก Request ID ใน log หรือใช้ใน response
+    response = await call_next(request)
+    response.headers['X-Request-ID'] = request_id
+    
+    return response
+
 def convert_image_to_base64(image: Image) -> str:
     """แปลงภาพเป็น Base64"""
     buffered = BytesIO()
@@ -53,7 +67,7 @@ def convert_image_to_base64(image: Image) -> str:
 async def main(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
-@app.post("/upload/")
+@app.post("/upload/") 
 async def upload_file(request: Request, file: UploadFile = File(...)):
     try:
         # เปิดไฟล์ภาพที่อัปโหลด
