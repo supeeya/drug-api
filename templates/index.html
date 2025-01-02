@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>อัปโหลดหรือถ่ายภาพเพื่อประเมินผล</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #355F2E, #A8CD89);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            max-width: 600px;
+            padding: 20px;
+            background-color: #ffffff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+        h1, h2 {
+            text-align: center;
+            color: #333;
+        }
+        input[type="file"], input[type="submit"], button {
+            display: block;
+            margin: 15px auto;
+            padding: 10px 20px;
+            border-radius: 5px;
+        }
+        input[type="submit"], button {
+            background-color: #F9C0AB;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        input[type="submit"]:hover, button:hover {
+            background-color: #F4E0AF;
+        }
+        video {
+            display: block;
+            margin: 20px auto;
+            width: 100%;
+            max-width: 400px;
+            border-radius: 8px;
+        }
+        canvas {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>อัปโหลดหรือถ่ายภาพเพื่อประเมินผล</h1>
+        <form action="/upload/" enctype="multipart/form-data" method="post">
+            <input name="file" type="file" required>
+            <input type="submit" value="อัปโหลด">
+        </form>
+        
+        <h2>หรือถ่ายภาพ</h2>
+        <video id="video" autoplay></video>
+        <button id="toggle-camera">เปิด/ปิดกล้อง</button>
+        <button id="capture">ถ่ายภาพ</button>
+        <canvas id="canvas"></canvas>
+        <form id="capture-form" action="/upload/" enctype="multipart/form-data" method="post">
+            <input id="captured-image" name="file" type="hidden">
+        </form>
+    </div>
+
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const captureButton = document.getElementById('capture');
+        const toggleCameraButton = document.getElementById('toggle-camera');
+        const captureForm = document.getElementById('capture-form');
+        const capturedImageInput = document.getElementById('captured-image');
+        let stream = null;
+
+        // เปิดกล้อง
+        async function startCamera() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                video.srcObject = stream;
+            } catch (err) {
+                console.error('Error accessing webcam:', err);
+            }
+        }
+
+        // ปิดกล้อง
+        function stopCamera() {
+            if (stream) {
+                const tracks = stream.getTracks();
+                tracks.forEach(track => track.stop());
+                video.srcObject = null;
+                stream = null;
+            }
+        }
+
+        // ปุ่มเปิด/ปิดกล้อง
+        toggleCameraButton.addEventListener('click', () => {
+            if (stream) {
+                stopCamera();
+                toggleCameraButton.textContent = 'เปิดกล้อง';
+            } else {
+                startCamera();
+                toggleCameraButton.textContent = 'ปิดกล้อง';
+            }
+        });
+
+        // ถ่ายภาพ
+        captureButton.addEventListener('click', () => {
+            const context = canvas.getContext('2d');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // แปลงภาพจาก canvas เป็นไฟล์รูปภาพ
+            canvas.toBlob(blob => {
+                const file = new File([blob], "captured_image.png", { type: 'image/png' });
+                const formData = new FormData();
+                formData.append('file', file);
+
+                // ส่งภาพไปยัง API ผ่าน Fetch API
+                fetch('/upload/', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.text())
+                .then(result => {
+                    document.write(result); // แสดงผลลัพธ์ที่ได้จากเซิร์ฟเวอร์
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ผลลัพธ์การประเมิน</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(to right, #355F2E, #A8CD89);
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        h2, h3 {
+            text-align: center;
+            color: #355F2E;
+        }
+        img {
+            display: block;
+            margin: 20px auto;
+            max-width: 100%;
+            border: 2px solid #355F2E;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            font-size: 18px;
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        li:last-child {
+            border-bottom: none;
+        }
+        .back-button {
+            display: block;
+            text-align: center;
+            margin: 20px auto;
+            padding: 10px 20px;
+            background-color: #F9C0AB;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.3s;
+        }
+        .back-button:hover {
+            background-color: #355F2E;
+        }
+        p {
+            text-align: justify;
+            line-height: 1.8;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>ผลลัพธ์การประเมิน</h2>
+        <h3>รูปภาพที่อัปโหลด:</h3>
+        <img src="data:image/png;base64,{{ uploaded_image_base64 }}" alt="Uploaded Image">
+        
+        <h3>รูปภาพที่ประมวลผล:</h3>
+        <img src="data:image/png;base64,{{ result_image_base64 }}" alt="Processed Image">
+        
+        <h3>ยาที่ตรวจพบและวิธีใช้:</h3>
+        <ul>
+            {% for name, instruction in detections %}
+                <li><strong>{{ name }}</strong> - {{ instruction }}</li>
+            {% endfor %}
+        </ul>
+        <a href="/" class="back-button">กลับไปที่หน้าส่งรูป</a>
+    </div>
+</body>
+</html>
