@@ -5,7 +5,7 @@ from io import BytesIO
 import base64
 from PIL import Image
 from ultralytics import YOLO
-import uuid  # เพิ่มการใช้งาน uuid
+import uuid
 import numpy as np
 
 
@@ -16,16 +16,16 @@ model = YOLO("models/drugs_yolov8.pt")
 
 # class names ของยา
 class_names = {
-    0 : "Alaxan",
-    1 : "Bactidol",
-    2 : "Bioflu", 
-    3 : "Biogesic", 
-    4 : "DayZinc",
-    5 :  "Decolgen",
-    6 : "Fish Oil", 
-    7 : "Kremil S", 
-    8 : "Medicol",
-    9 : "Neozep"
+    0: "Alaxan",
+    1: "Bactidol",
+    2: "Bioflu",
+    3: "Biogesic",
+    4: "DayZinc",
+    5: "Decolgen",
+    6: "Fish Oil",
+    7: "Kremil S",
+    8: "Medicol",
+    9: "Neozep"
 }
 
 # คำแนะนำการใช้ยาและข้อควรระวัง
@@ -67,7 +67,7 @@ def convert_image_to_base64(image: Image) -> str:
 async def main(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
-@app.post("/upload/") 
+@app.post("/upload/")
 async def upload_file(request: Request, file: UploadFile = File(...)):
     try:
         # เปิดไฟล์ภาพที่อัปโหลด
@@ -165,3 +165,20 @@ async def capture_image(request: Request, image_base64: str = Form(...)):
 
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
+
+# รองรับ HEAD method ในทุกๆ route
+@app.head("/")
+async def head_root():
+    return {}
+
+@app.head("/upload/")
+async def head_upload():
+    return {}
+
+@app.head("/predict/")
+async def head_predict():
+    return {}
+
+@app.head("/capture/")
+async def head_capture():
+    return {}
