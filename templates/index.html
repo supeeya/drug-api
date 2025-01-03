@@ -66,7 +66,7 @@
         <video id="video" autoplay></video>
         <button id="toggle-camera">เปิดกล้อง</button>
         <button id="capture">ถ่ายภาพ</button>
-        <button id="switch-camera">สลับกล้อง</button>
+        <button id="switch-camera">สลับกล้อง</button> <!-- เพิ่มปุ่มสลับกล้อง -->
         <canvas id="canvas"></canvas>
         <form id="capture-form" action="/upload/" enctype="multipart/form-data" method="post">
             <input id="captured-image" name="file" type="hidden">
@@ -82,13 +82,31 @@
         const captureForm = document.getElementById('capture-form');
         const capturedImageInput = document.getElementById('captured-image');
         let stream = null;
-        let currentCamera = 'user'; // ใช้ 'user' สำหรับกล้องหน้า
+        let currentStreamTrack = null;
+        let currentCamera = 'user'; // กล้องหน้าเริ่มต้น
 
-        // เปิดกล้อง
-        async function startCamera() {
+        // ดึงรายการของกล้อง
+        async function getAvailableCameras() {
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const videoDevices = devices.filter(device => device.kind === 'videoinput');
+            return videoDevices;
+        }
+
+        // เริ่มต้นกล้อง
+        async function startCamera(camera = 'user') {
             try {
-                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: currentCamera } });
+                const videoDevices = await getAvailableCameras();
+                const selectedDevice = videoDevices.find(device => device.deviceId === camera);
+
+                const constraints = {
+                    video: {
+                        deviceId: selectedDevice ? { exact: selectedDevice.deviceId } : undefined
+                    }
+                };
+
+                stream = await navigator.mediaDevices.getUserMedia(constraints);
                 video.srcObject = stream;
+                currentStreamTrack = stream.getVideoTracks()[0];
             } catch (err) {
                 console.error('Error accessing webcam:', err);
             }
@@ -101,17 +119,33 @@
                 tracks.forEach(track => track.stop());
                 video.srcObject = null;
                 stream = null;
+                currentStreamTrack = null;
             }
         }
 
-        // ปุ่มเปิด/ปิดกล้อง
+        // เปิด/ปิดกล้อง
         toggleCameraButton.addEventListener('click', () => {
             if (stream) {
                 stopCamera();
                 toggleCameraButton.textContent = 'เปิดกล้อง';
             } else {
-                startCamera();
+                startCamera(currentCamera);
                 toggleCameraButton.textContent = 'ปิดกล้อง';
+            }
+        });
+
+        // สลับกล้อง
+        switchCameraButton.addEventListener('click', async () => {
+            if (currentCamera === 'user') {
+                currentCamera = 'environment'; // กล้องหลัง
+            } else {
+                currentCamera = 'user'; // กล้องหน้า
+            }
+            if (stream) {
+                stopCamera();
+                startCamera(currentCamera); // เริ่มต้นกล้องใหม่ที่เลือก
+            } else {
+                startCamera(currentCamera); // เริ่มต้นกล้องเมื่อไม่ได้เปิด
             }
         });
 
@@ -143,15 +177,8 @@
             });
         });
 
-        // ฟังก์ชันสลับกล้อง
-        switchCameraButton.addEventListener('click', () => {
-            // เปลี่ยนกล้องที่ใช้
-            currentCamera = currentCamera === 'user' ? 'environment' : 'user'; // user = กล้องหน้า, environment = กล้องหลัง
-            if (stream) {
-                stopCamera();
-            }
-            startCamera(); // เริ่มต้นกล้องใหม่
-        });
+        // เริ่มต้นกล้องหน้า
+        startCamera(currentCamera);
     </script>
 </body>
 </html>
