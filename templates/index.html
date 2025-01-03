@@ -85,24 +85,37 @@
         let currentStreamTrack = null;
         let currentCamera = 'user'; // กล้องหน้าเริ่มต้น
 
+        let videoDevices = [];
+        let currentDevice = null;
+
         // ดึงรายการของกล้อง
         async function getAvailableCameras() {
-            const devices = await navigator.mediaDevices.enumerateDevices();
-            const videoDevices = devices.filter(device => device.kind === 'videoinput');
-            return videoDevices;
+            try {
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                videoDevices = devices.filter(device => device.kind === 'videoinput');
+                
+                // กำหนดกล้องเริ่มต้น
+                currentDevice = videoDevices.find(device => device.label.includes(currentCamera === 'user' ? 'front' : 'back')) || videoDevices[0];
+            } catch (err) {
+                console.error('Error fetching cameras:', err);
+            }
         }
 
         // เริ่มต้นกล้อง
-        async function startCamera(camera = 'user') {
-            try {
-                const videoDevices = await getAvailableCameras();
-                const selectedDevice = videoDevices.find(device => device.deviceId === camera);
+        async function startCamera() {
+            if (!currentDevice) return;
 
+            try {
                 const constraints = {
                     video: {
-                        deviceId: selectedDevice ? { exact: selectedDevice.deviceId } : undefined
+                        deviceId: { exact: currentDevice.deviceId }
                     }
                 };
+
+                // ปิดกล้องก่อนแล้วค่อยเริ่มต้นใหม่
+                if (stream) {
+                    stopCamera();
+                }
 
                 stream = await navigator.mediaDevices.getUserMedia(constraints);
                 video.srcObject = stream;
@@ -129,7 +142,7 @@
                 stopCamera();
                 toggleCameraButton.textContent = 'เปิดกล้อง';
             } else {
-                startCamera(currentCamera);
+                startCamera();
                 toggleCameraButton.textContent = 'ปิดกล้อง';
             }
         });
@@ -141,12 +154,12 @@
             } else {
                 currentCamera = 'user'; // กล้องหน้า
             }
-            if (stream) {
-                stopCamera();
-                startCamera(currentCamera); // เริ่มต้นกล้องใหม่ที่เลือก
-            } else {
-                startCamera(currentCamera); // เริ่มต้นกล้องเมื่อไม่ได้เปิด
-            }
+
+            // หาจากรายการของกล้องที่สามารถเลือกได้
+            await getAvailableCameras();
+
+            // สลับกล้อง
+            startCamera();
         });
 
         // ถ่ายภาพ
@@ -177,8 +190,8 @@
             });
         });
 
-        // เริ่มต้นกล้องหน้า
-        startCamera(currentCamera);
+        // เริ่มต้นการดึงกล้องและการเริ่มต้นกล้อง
+        getAvailableCameras().then(() => startCamera());
     </script>
 </body>
 </html>
