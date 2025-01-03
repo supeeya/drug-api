@@ -32,7 +32,7 @@
             display: block;
             margin: 15px auto;
             padding: 10px 20px;
-            border-radius: 5px;
+            border-radius: 25px;
         }
         input[type="submit"], button {
             background-color: #85A947;
@@ -42,7 +42,7 @@
             transition: 0.3s;
         }
         input[type="submit"]:hover, button:hover {
-            background-color: #85A947;
+            background-color: #6E8C3D;
         }
         video {
             display: block;
@@ -53,6 +53,12 @@
         }
         canvas {
             display: none;
+        }
+        .button-group {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 15px;
         }
     </style>
 </head>
@@ -66,9 +72,11 @@
         
         <h2>หรือถ่ายภาพ</h2>
         <video id="video" autoplay></video>
-        <button id="toggle-camera">เปิดกล้อง</button>
-        <button id="capture">ถ่ายภาพ</button>
-        <button id="switch-camera">สลับกล้อง</button> <!-- เพิ่มปุ่มสลับกล้อง -->
+        <div class="button-group">
+            <button id="toggle-camera">เปิดกล้อง</button>
+            <button id="capture">ถ่ายภาพ</button>
+            <button id="switch-camera">สลับกล้อง</button>
+        </div>
         <canvas id="canvas"></canvas>
         <form id="capture-form" action="/upload/" enctype="multipart/form-data" method="post">
             <input id="captured-image" name="file" type="hidden">
@@ -85,40 +93,30 @@
         const capturedImageInput = document.getElementById('captured-image');
         let stream = null;
         let currentStreamTrack = null;
-        let currentCamera = 'user'; // กล้องหน้าเริ่มต้น
+        let currentCamera = 'user';
 
         let videoDevices = [];
         let currentDevice = null;
 
-        // ดึงรายการของกล้อง
         async function getAvailableCameras() {
             try {
                 const devices = await navigator.mediaDevices.enumerateDevices();
                 videoDevices = devices.filter(device => device.kind === 'videoinput');
-                
-                // กำหนดกล้องเริ่มต้น
                 currentDevice = videoDevices.find(device => device.label.includes(currentCamera === 'user' ? 'front' : 'back')) || videoDevices[0];
             } catch (err) {
                 console.error('Error fetching cameras:', err);
             }
         }
 
-        // เริ่มต้นกล้อง
         async function startCamera() {
             if (!currentDevice) return;
-
             try {
                 const constraints = {
                     video: {
                         deviceId: { exact: currentDevice.deviceId }
                     }
                 };
-
-                // ปิดกล้องก่อนแล้วค่อยเริ่มต้นใหม่
-                if (stream) {
-                    stopCamera();
-                }
-
+                if (stream) stopCamera();
                 stream = await navigator.mediaDevices.getUserMedia(constraints);
                 video.srcObject = stream;
                 currentStreamTrack = stream.getVideoTracks()[0];
@@ -127,7 +125,6 @@
             }
         }
 
-        // ปิดกล้อง
         function stopCamera() {
             if (stream) {
                 const tracks = stream.getTracks();
@@ -138,7 +135,6 @@
             }
         }
 
-        // เปิด/ปิดกล้อง
         toggleCameraButton.addEventListener('click', () => {
             if (stream) {
                 stopCamera();
@@ -149,54 +145,35 @@
             }
         });
 
-        // สลับกล้อง
         switchCameraButton.addEventListener('click', async () => {
-            if (currentCamera === 'user') {
-                currentCamera = 'environment'; // กล้องหลัง
-            } else {
-                currentCamera = 'user'; // กล้องหน้า
-            }
-
-            // หาจากรายการของกล้องที่สามารถเลือกได้
+            currentCamera = currentCamera === 'user' ? 'environment' : 'user';
             await getAvailableCameras();
-
-            // สลับกล้อง
             startCamera();
         });
 
-        // ถ่ายภาพ
         captureButton.addEventListener('click', () => {
             const context = canvas.getContext('2d');
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             context.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-            // แปลงภาพจาก canvas เป็นไฟล์รูปภาพ
             canvas.toBlob(blob => {
                 const file = new File([blob], "captured_image.png", { type: 'image/png' });
                 const formData = new FormData();
                 formData.append('file', file);
-
-                // ส่งภาพไปยัง API ผ่าน Fetch API
                 fetch('/upload/', {
                     method: 'POST',
                     body: formData
                 })
                 .then(response => response.text())
-                .then(result => {
-                    document.write(result); // แสดงผลลัพธ์ที่ได้จากเซิร์ฟเวอร์
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                });
+                .then(result => document.write(result))
+                .catch(error => console.error('Error:', error));
             });
         });
 
-        // เริ่มต้นการดึงกล้องและการเริ่มต้นกล้อง
         getAvailableCameras().then(() => startCamera());
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
-    integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
-    crossorigin="anonymous"></script>
+      <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+      crossorigin="anonymous"></script>
 </body>
 </html>
