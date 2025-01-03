@@ -64,8 +64,9 @@
         
         <h2>หรือถ่ายภาพ</h2>
         <video id="video" autoplay></video>
-        <button id="toggle-camera">เปิด/ปิดกล้อง</button>
+        <button id="toggle-camera">เปิดกล้อง</button>
         <button id="capture">ถ่ายภาพ</button>
+        <button id="switch-camera">สลับกล้อง</button>
         <canvas id="canvas"></canvas>
         <form id="capture-form" action="/upload/" enctype="multipart/form-data" method="post">
             <input id="captured-image" name="file" type="hidden">
@@ -77,14 +78,16 @@
         const canvas = document.getElementById('canvas');
         const captureButton = document.getElementById('capture');
         const toggleCameraButton = document.getElementById('toggle-camera');
+        const switchCameraButton = document.getElementById('switch-camera');
         const captureForm = document.getElementById('capture-form');
         const capturedImageInput = document.getElementById('captured-image');
         let stream = null;
+        let currentCamera = 'user'; // ใช้ 'user' สำหรับกล้องหน้า
 
         // เปิดกล้อง
         async function startCamera() {
             try {
-                stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: currentCamera } });
                 video.srcObject = stream;
             } catch (err) {
                 console.error('Error accessing webcam:', err);
@@ -138,6 +141,16 @@
                     console.error('Error:', error);
                 });
             });
+        });
+
+        // ฟังก์ชันสลับกล้อง
+        switchCameraButton.addEventListener('click', () => {
+            // เปลี่ยนกล้องที่ใช้
+            currentCamera = currentCamera === 'user' ? 'environment' : 'user'; // user = กล้องหน้า, environment = กล้องหลัง
+            if (stream) {
+                stopCamera();
+            }
+            startCamera(); // เริ่มต้นกล้องใหม่
         });
     </script>
 </body>
