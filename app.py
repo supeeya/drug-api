@@ -371,3 +371,4 @@ async def capture_image(request: Request, image_base64: str = Form(...)):
 
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
+
