@@ -271,7 +271,7 @@ def convert_image_to_base64(image: Image) -> str:
 
 @app.get("/")
 async def main(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    return templates.TemplateResponse("form.html", {"request": request})
 
 @app.post("/upload/") 
 async def upload_file(request: Request, file: UploadFile = File(...)):
